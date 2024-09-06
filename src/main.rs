@@ -24,7 +24,8 @@ fn main() -> Result<()> {
         }
         Cli::Test(_) => {
             let config = Config::read();
-            divera::login(config.divera.username, config.divera.password)?;
+            let access_token = divera::login(config.divera.username, config.divera.password)?;
+            divera::report_types(access_token)?;
         }
     };
 
