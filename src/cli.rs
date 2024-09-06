@@ -6,6 +6,8 @@ use clap::Parser;
 pub enum Cli {
     /// Initialize the config
     Init(Init),
+
+    Test(Test),
 }
 
 #[derive(Debug, Parser)]
@@ -17,3 +19,6 @@ pub struct Init {
     #[clap(long)]
     pub divera_password: String,
 }
+
+#[derive(Debug, Parser)]
+pub struct Test {}

@@ -5,15 +5,15 @@ use toml;
 
 pub const CONFIG_PATH: &str = "./config.toml";
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
-    divera: Divera,
+    pub divera: Divera,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Divera {
-    username: String,
-    password: String,
+    pub username: String,
+    pub password: String,
 }
 
 impl Config {

@@ -6,6 +6,7 @@ This document contains the help content for the `divera-reports` command-line pr
 
 * [`divera-reports`↴](#divera-reports)
 * [`divera-reports init`↴](#divera-reports-init)
+* [`divera-reports test`↴](#divera-reports-test)
 
 ## `divera-reports`
 
@@ -16,6 +17,7 @@ Divera reports
 ###### **Subcommands:**
 
 * `init` — Initialize the config
+* `test` — 
 
 
 
@@ -29,6 +31,12 @@ Initialize the config
 
 * `--divera-username <DIVERA_USERNAME>` — Username for divera247
 * `--divera-password <DIVERA_PASSWORD>` — Password for divera247
+
+
+
+## `divera-reports test`
+
+**Usage:** `divera-reports test`
 
 
 
