@@ -6,10 +6,12 @@ mod reports;
 use anyhow::{bail, Context, Result};
 use clap::Parser;
 use comfy_table::{ContentArrangement, Table};
+use divera::report_types;
 use env_logger;
 use reports::{
     absent::{create_absent_reports, print_absent_reports},
     roster::{create_roster_reports, print_roster_reports},
+    station::{create_station_reports, print_station_reports},
 };
 use std::{fmt::Display, path::Path};
 
@@ -71,7 +73,9 @@ fn main() -> Result<()> {
                 cli::Report::Station {} => {
                     let reports = divera::reports(&login.user.access_token, REPORT_ID_STATION)?;
                     let report_type = report_types.items.get(&REPORT_ID_STATION).cloned().unwrap();
-                    dbg!(report_type);
+                    let station_reports = create_station_reports(report_type, reports, users)
+                        .context("Failed to create station reports")?;
+                    print_station_reports(station_reports);
                 }
                 cli::Report::FireOperation {} => {
                     let reports =

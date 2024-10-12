@@ -1,5 +1,6 @@
 pub mod absent;
 pub mod roster;
+pub mod station;
 
 use anyhow::{anyhow, Result};
 use serde_json::Value;

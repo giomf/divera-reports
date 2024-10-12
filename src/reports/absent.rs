@@ -44,12 +44,12 @@ pub struct AbsentReport {
     pub user: String,
     pub begin: NaiveDate,
     pub end: NaiveDate,
-    pub reason: AbsentReason,
+    pub reason: Reason,
     pub note: String,
 }
 
 #[derive(Clone, Debug, Default)]
-pub enum AbsentReason {
+pub enum Reason {
     Illness,
     Professionally,
     Training,
@@ -57,7 +57,7 @@ pub enum AbsentReason {
     Vacation,
 }
 
-impl AbsentReason {
+impl Reason {
     pub fn new(types: Vec<ReportTypesItemFieldOption>, id: &str) -> Result<Self> {
         let r#type = types
             .iter()
@@ -76,13 +76,13 @@ impl AbsentReason {
     }
 }
 
-impl Display for AbsentReason {
+impl Display for Reason {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AbsentReason::Illness => f.write_str(REASON_ILLNESS_TEXT),
-            AbsentReason::Professionally => f.write_str(REASON_PROFESSIONALLY_TEXT),
-            AbsentReason::Training => f.write_str(REASON_TRAINING_TEXT),
-            AbsentReason::Vacation => f.write_str(REASON_VACATION_TEXT),
+            Reason::Illness => f.write_str(REASON_ILLNESS_TEXT),
+            Reason::Professionally => f.write_str(REASON_PROFESSIONALLY_TEXT),
+            Reason::Training => f.write_str(REASON_TRAINING_TEXT),
+            Reason::Vacation => f.write_str(REASON_VACATION_TEXT),
         }
     }
 }
@@ -122,7 +122,7 @@ pub fn create_absent_reports(
                         .clone()
                         .ok_or_else(|| anyhow!("Failed to get reason options"))?;
                     let id = parse_string(field).context("Failed to get reason id")?;
-                    absent_report.reason = AbsentReason::new(options, &id)?;
+                    absent_report.reason = Reason::new(options, &id)?;
                 }
                 NOTE_ID => {
                     absent_report.note = parse_string(field).context("Failed to get note")?;
