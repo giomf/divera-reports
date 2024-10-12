@@ -11,7 +11,6 @@ This document contains the help content for the `divera-reports` command-line pr
 * [`divera-reports report absences`↴](#divera-reports-report-absences)
 * [`divera-reports report roster`↴](#divera-reports-report-roster)
 * [`divera-reports report station`↴](#divera-reports-report-station)
-* [`divera-reports report fire-operation`↴](#divera-reports-report-fire-operation)
 
 ## `divera-reports`
 
@@ -55,7 +54,6 @@ Initialize the config
 * `absences` — 
 * `roster` — 
 * `station` — 
-* `fire-operation` — 
 
 
 
@@ -74,12 +72,6 @@ Initialize the config
 ## `divera-reports report station`
 
 **Usage:** `divera-reports report station`
-
-
-
-## `divera-reports report fire-operation`
-
-**Usage:** `divera-reports report fire-operation`
 
 
 

@@ -3,11 +3,10 @@ use std::{collections::HashMap, fmt::Display};
 use anyhow::{anyhow, bail, Context, Result};
 use chrono::{DateTime, NaiveDate};
 use comfy_table::{ContentArrangement, Table};
-use divera::schema::response::{ReportTypesItem, ReportTypesItemFieldOption, Reports};
 use serde_json::Value;
 
-use super::parse_string;
-use crate::divera::{self, schema::response::Consumer};
+use super::{parse_string, Reports};
+use crate::divera::schema::response;
 
 const REASON_ID: &str = "f75a352a-0b9c-4c7e-bf7a-e67e6048f1f1";
 const BEGIN_ID: &str = "10f05309-e584-4470-a0db-ce6bb15ade34";
@@ -57,49 +56,12 @@ pub enum Reason {
     Vacation,
 }
 
-impl Reason {
-    pub fn new(types: Vec<ReportTypesItemFieldOption>, id: &str) -> Result<Self> {
-        let r#type = types
-            .iter()
-            .find(|r#type| r#type.id == id)
-            .context(format!("Type id \"{}\" can not be found in types", id))?;
-
-        let variant = match r#type.id.as_str() {
-            REASON_TRAINING_ID => Self::Training,
-            REASON_PROFESSIONALLY_ID => Self::Professionally,
-            REASON_ILLNESS_ID => Self::Illness,
-            REASON_VACATION_ID => Self::Vacation,
-            _ => bail!("Unknow type variant \"{}\"", r#type.id),
-        };
-
-        Ok(variant)
-    }
-}
-
-impl Display for Reason {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Reason::Illness => f.write_str(REASON_ILLNESS_TEXT),
-            Reason::Professionally => f.write_str(REASON_PROFESSIONALLY_TEXT),
-            Reason::Training => f.write_str(REASON_TRAINING_TEXT),
-            Reason::Vacation => f.write_str(REASON_VACATION_TEXT),
-        }
-    }
-}
-
-pub fn create_absent_reports(
-    report_type: ReportTypesItem,
-    reports: Reports,
-    users: HashMap<String, Consumer>,
-) -> Result<Vec<AbsentReport>> {
-    let mut absent_reports: Vec<AbsentReport> = Vec::default();
-
-    for report in reports.items {
-        let user = users
-            .get(&report.user_cluster_relation_id.to_string())
-            .cloned()
-            .unwrap_or_default();
-
+impl AbsentReport {
+    pub fn new_from_report(
+        report_type: &response::ReportTypesItem,
+        report: &response::Report,
+        user: &response::Consumer,
+    ) -> Result<Self> {
         let mut absent_report = AbsentReport {
             id: report.id,
             user: user.stdformat_name.clone(),
@@ -130,28 +92,86 @@ pub fn create_absent_reports(
                 _ => bail!("Unknown absent report type \"{}\"", field_type.name),
             };
         }
-        absent_reports.push(absent_report);
+        Ok(absent_report)
+    }
+}
+impl Reports for Vec<AbsentReport> {
+    fn new_from_reports(
+        report_type: response::ReportTypesItem,
+        reports: response::Reports,
+        users: HashMap<String, response::Consumer>,
+    ) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        let mut absent_reports: Vec<AbsentReport> = Vec::default();
+
+        for report in reports.items {
+            let user = users
+                .get(&report.user_cluster_relation_id.to_string())
+                .cloned()
+                .unwrap_or_default();
+            let absent_report = AbsentReport::new_from_report(&report_type, &report, &user)
+                .context("Failed to create absent report")?;
+            absent_reports.push(absent_report);
+        }
+
+        Ok(absent_reports)
     }
 
-    Ok(absent_reports)
-}
-pub fn print_absent_reports(reports: Vec<AbsentReport>) {
-    let mut table = Table::new();
-    table.set_content_arrangement(ContentArrangement::Dynamic);
-    table.set_header(ABSENT_REPORTS_HEADERS);
-    for report in reports {
-        table.add_row(vec![
-            report.id.to_string(),
-            report.user,
-            report.reason.to_string(),
-            report.begin.to_string(),
-            report.end.to_string(),
-            report.note,
-        ]);
+    fn print(self) {
+        let mut table = Table::new();
+        table.set_content_arrangement(ContentArrangement::Dynamic);
+        table.set_header(ABSENT_REPORTS_HEADERS);
+        for report in self {
+            table.add_row(vec![
+                report.id.to_string(),
+                report.user,
+                report.reason.to_string(),
+                report.begin.to_string(),
+                report.end.to_string(),
+                report.note,
+            ]);
+        }
+
+        println!("{table}");
     }
 
-    println!("{table}");
+    fn write_xlsx(&self) {
+        todo!()
+    }
 }
+
+impl Reason {
+    pub fn new(types: Vec<response::ReportTypesItemFieldOption>, id: &str) -> Result<Self> {
+        let r#type = types
+            .iter()
+            .find(|r#type| r#type.id == id)
+            .context(format!("Type id \"{}\" can not be found in types", id))?;
+
+        let variant = match r#type.id.as_str() {
+            REASON_TRAINING_ID => Self::Training,
+            REASON_PROFESSIONALLY_ID => Self::Professionally,
+            REASON_ILLNESS_ID => Self::Illness,
+            REASON_VACATION_ID => Self::Vacation,
+            _ => bail!("Unknow type variant \"{}\"", r#type.id),
+        };
+
+        Ok(variant)
+    }
+}
+
+impl Display for Reason {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Reason::Illness => f.write_str(REASON_ILLNESS_TEXT),
+            Reason::Professionally => f.write_str(REASON_PROFESSIONALLY_TEXT),
+            Reason::Training => f.write_str(REASON_TRAINING_TEXT),
+            Reason::Vacation => f.write_str(REASON_VACATION_TEXT),
+        }
+    }
+}
+
 fn parse_date(value: &Value) -> Result<NaiveDate> {
     let timestamp: i64 = if value.is_number() {
         value.as_i64().unwrap()

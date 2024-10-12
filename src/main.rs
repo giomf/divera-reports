@@ -6,13 +6,8 @@ mod reports;
 use anyhow::{bail, Context, Result};
 use clap::Parser;
 use comfy_table::{ContentArrangement, Table};
-use divera::report_types;
 use env_logger;
-use reports::{
-    absent::{create_absent_reports, print_absent_reports},
-    roster::{create_roster_reports, print_roster_reports},
-    station::{create_station_reports, print_station_reports},
-};
+use reports::{absent::AbsentReport, roster::RosterReport, station::StationReport, Reports};
 use std::{fmt::Display, path::Path};
 
 use cli::Cli;
@@ -60,32 +55,26 @@ fn main() -> Result<()> {
                         .get(&REPORT_ID_ABSENCES)
                         .cloned()
                         .unwrap();
-                    let absent_reports = create_absent_reports(report_type, reports, users)?;
-                    print_absent_reports(absent_reports);
+                    let absent_reports =
+                        Vec::<AbsentReport>::new_from_reports(report_type, reports, users)
+                            .context("Failed to create absent reports")?;
+                    absent_reports.print();
                 }
                 cli::Report::Roster {} => {
                     let reports = divera::reports(&login.user.access_token, REPORT_ID_ROSTER)?;
                     let report_type = report_types.items.get(&REPORT_ID_ROSTER).cloned().unwrap();
-                    let roster_reports = create_roster_reports(report_type, reports, users)
-                        .context("Failed to create roster reports")?;
-                    print_roster_reports(roster_reports);
+                    let roster_reports =
+                        Vec::<RosterReport>::new_from_reports(report_type, reports, users)
+                            .context("Failed to create roster reports")?;
+                    roster_reports.print();
                 }
                 cli::Report::Station {} => {
                     let reports = divera::reports(&login.user.access_token, REPORT_ID_STATION)?;
                     let report_type = report_types.items.get(&REPORT_ID_STATION).cloned().unwrap();
-                    let station_reports = create_station_reports(report_type, reports, users)
-                        .context("Failed to create station reports")?;
-                    print_station_reports(station_reports);
-                }
-                cli::Report::FireOperation {} => {
-                    let reports =
-                        divera::reports(&login.user.access_token, REPORT_ID_FIRE_OPERATION)?;
-                    let report_type = report_types
-                        .items
-                        .get(&REPORT_ID_FIRE_OPERATION)
-                        .cloned()
-                        .unwrap();
-                    dbg!(report_type);
+                    let station_reports =
+                        Vec::<StationReport>::new_from_reports(report_type, reports, users)
+                            .context("Failed to create station reports")?;
+                    station_reports.print();
                 }
             }
         }

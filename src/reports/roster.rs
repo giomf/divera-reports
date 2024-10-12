@@ -3,10 +3,8 @@ use std::{collections::HashMap, fmt::Display};
 use anyhow::{anyhow, bail, Context, Result};
 use comfy_table::{ContentArrangement, Table};
 
-use super::parse_string;
-use crate::divera::schema::response::{
-    Consumer, Report, ReportTypesItem, ReportTypesItemFieldOption, Reports,
-};
+use super::{parse_string, Reports};
+use crate::divera::schema::response;
 
 const TYPE_ID: &str = "ab71921a-70b5-46de-b198-e342c50fe262";
 const TOPIC_ID: &str = "24868bfa-c903-437f-9959-f7ea888e0145";
@@ -85,7 +83,11 @@ pub enum TimeScope {
 }
 
 impl RosterReport {
-    pub fn new(report_type: &ReportTypesItem, report: &Report, user: &Consumer) -> Result<Self> {
+    pub fn new_from_report(
+        report_type: &response::ReportTypesItem,
+        report: &response::Report,
+        user: &response::Consumer,
+    ) -> Result<Self> {
         let mut roster_report = RosterReport {
             id: report.id,
             user: user.stdformat_name.clone(),
@@ -139,8 +141,57 @@ impl RosterReport {
     }
 }
 
+impl Reports for Vec<RosterReport> {
+    fn new_from_reports(
+        report_type: response::ReportTypesItem,
+        reports: response::Reports,
+        users: HashMap<String, response::Consumer>,
+    ) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        let mut roster_reports: Vec<RosterReport> = Vec::default();
+        for report in reports.items {
+            let user = users
+                .get(&report.user_cluster_relation_id.to_string())
+                .cloned()
+                .unwrap_or_default();
+            roster_reports.push(RosterReport::new_from_report(&report_type, &report, &user)?);
+        }
+        Ok(roster_reports)
+    }
+
+    fn print(self) {
+        let mut table = Table::new();
+        table.set_content_arrangement(ContentArrangement::Dynamic);
+        table.set_header(ROSTER_REPORTS_HEADERS);
+        for report in self {
+            table.add_row(vec![
+                report.id.to_string(),
+                report.user,
+                report.r#type.to_string(),
+                report
+                    .participation
+                    .map_or(String::default(), |participation| participation.to_string()),
+                report
+                    .time_scope
+                    .map_or(String::default(), |time_scope| time_scope.to_string()),
+                report.potential_date,
+                report.topic,
+                report.description,
+            ]);
+        }
+
+        println!("{table}");
+    }
+
+    fn write_xlsx(&self) {
+        todo!()
+    }
+}
+
 impl Type {
-    pub fn new(types: Vec<ReportTypesItemFieldOption>, id: &str) -> Result<Self> {
+    pub fn new(types: Vec<response::ReportTypesItemFieldOption>, id: &str) -> Result<Self> {
         let r#type = types
             .iter()
             .find(|r#type| r#type.id == id)
@@ -166,7 +217,7 @@ impl Display for Type {
 }
 
 impl Participation {
-    pub fn new(types: Vec<ReportTypesItemFieldOption>, id: &str) -> Result<Option<Self>> {
+    pub fn new(types: Vec<response::ReportTypesItemFieldOption>, id: &str) -> Result<Option<Self>> {
         if let Some(r#type) = types.iter().find(|r#type| r#type.id == id) {
             let variant = match r#type.id.as_str() {
                 PARTICIPATION_HELPING_ID => Self::Helping,
@@ -190,7 +241,7 @@ impl Display for Participation {
 }
 
 impl TimeScope {
-    pub fn new(types: Vec<ReportTypesItemFieldOption>, id: &str) -> Result<Option<Self>> {
+    pub fn new(types: Vec<response::ReportTypesItemFieldOption>, id: &str) -> Result<Option<Self>> {
         if let Some(r#type) = types.iter().find(|r#type| r#type.id == id) {
             let variant = match r#type.id.as_str() {
                 TIMESCOPE_BOTH_ID => Self::Both,
@@ -216,44 +267,4 @@ impl Display for TimeScope {
             TimeScope::Other => f.write_str(TIMESCOPE_OTHER_TEXT),
         }
     }
-}
-
-pub fn create_roster_reports(
-    report_type: ReportTypesItem,
-    reports: Reports,
-    users: HashMap<String, Consumer>,
-) -> Result<Vec<RosterReport>> {
-    let mut roster_reports: Vec<RosterReport> = Vec::default();
-    for report in reports.items {
-        let user = users
-            .get(&report.user_cluster_relation_id.to_string())
-            .cloned()
-            .unwrap_or_default();
-        roster_reports.push(RosterReport::new(&report_type, &report, &user)?);
-    }
-    Ok(roster_reports)
-}
-
-pub fn print_roster_reports(reports: Vec<RosterReport>) {
-    let mut table = Table::new();
-    table.set_content_arrangement(ContentArrangement::Dynamic);
-    table.set_header(ROSTER_REPORTS_HEADERS);
-    for report in reports {
-        table.add_row(vec![
-            report.id.to_string(),
-            report.user,
-            report.r#type.to_string(),
-            report
-                .participation
-                .map_or(String::default(), |participation| participation.to_string()),
-            report
-                .time_scope
-                .map_or(String::default(), |time_scope| time_scope.to_string()),
-            report.potential_date,
-            report.topic,
-            report.description,
-        ]);
-    }
-
-    println!("{table}");
 }

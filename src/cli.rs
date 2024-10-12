@@ -28,5 +28,4 @@ pub enum Report {
     Absences {},
     Roster {},
     Station {},
-    FireOperation {},
 }

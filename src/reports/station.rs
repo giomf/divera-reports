@@ -2,10 +2,10 @@ use std::{collections::HashMap, fmt::Display};
 
 use anyhow::{anyhow, bail, Context, Result};
 use comfy_table::{ContentArrangement, Table};
-use divera::schema::response::{ReportTypesItem, ReportTypesItemFieldOption, Reports};
 
-use super::parse_string;
-use crate::divera::{self, schema::response::Consumer};
+use crate::divera::schema::response;
+
+use super::{parse_string, Reports};
 
 const TYPE_ID: &str = "35e2d05a-1368-43b5-8611-4afc319c95da";
 const NOTE_ID: &str = "383b1c3c-4470-440a-bf03-27b315778576";
@@ -42,8 +42,86 @@ pub enum Type {
     Problem,
 }
 
+impl StationReport {
+    pub fn new_from_report(
+        report_type: &response::ReportTypesItem,
+        report: &response::Report,
+        user: &response::Consumer,
+    ) -> Result<Self> {
+        let mut station_report = StationReport {
+            id: report.id,
+            user: user.stdformat_name.clone(),
+            ..Default::default()
+        };
+
+        for (field, field_type) in report.fields.iter().zip(report_type.fields.iter()) {
+            match field_type.id.as_str() {
+                TYPE_ID => {
+                    let options = field_type
+                        .options
+                        .clone()
+                        .ok_or_else(|| anyhow!("Failed to get type options"))?;
+                    let id = parse_string(field).context("Failed to get type id")?;
+                    station_report.r#type = Type::new(options, &id)?;
+                }
+                NOTE_ID => {
+                    station_report.note = parse_string(field).context("Failed to get note")?;
+                }
+                _ => bail!("Unknown station report type \"{}\"", field_type.name),
+            };
+        }
+
+        Ok(station_report)
+    }
+}
+
+impl Reports for Vec<StationReport> {
+    fn new_from_reports(
+        report_type: response::ReportTypesItem,
+        reports: response::Reports,
+        users: HashMap<String, response::Consumer>,
+    ) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        let mut station_reports: Vec<StationReport> = Vec::default();
+
+        for report in reports.items {
+            let user = users
+                .get(&report.user_cluster_relation_id.to_string())
+                .cloned()
+                .unwrap_or_default();
+            let station_report = StationReport::new_from_report(&report_type, &report, &user)
+                .context("Failed to create station report")?;
+            station_reports.push(station_report);
+        }
+
+        Ok(station_reports)
+    }
+
+    fn print(self) {
+        let mut table = Table::new();
+        table.set_content_arrangement(ContentArrangement::Dynamic);
+        table.set_header(STATION_REPORTS_HEADERS);
+        for report in self {
+            table.add_row(vec![
+                report.id.to_string(),
+                report.user,
+                report.r#type.to_string(),
+                report.note,
+            ]);
+        }
+
+        println!("{table}");
+    }
+
+    fn write_xlsx(&self) {
+        todo!()
+    }
+}
+
 impl Type {
-    pub fn new(types: Vec<ReportTypesItemFieldOption>, id: &str) -> Result<Self> {
+    pub fn new(types: Vec<response::ReportTypesItemFieldOption>, id: &str) -> Result<Self> {
         let r#type = types
             .iter()
             .find(|r#type| r#type.id == id)
@@ -70,60 +148,4 @@ impl Display for Type {
             Type::Problem => f.write_str(TYPE_PROBLEM_TEXT),
         }
     }
-}
-
-pub fn create_station_reports(
-    report_type: ReportTypesItem,
-    reports: Reports,
-    users: HashMap<String, Consumer>,
-) -> Result<Vec<StationReport>> {
-    let mut absent_reports: Vec<StationReport> = Vec::default();
-
-    for report in reports.items {
-        let user = users
-            .get(&report.user_cluster_relation_id.to_string())
-            .cloned()
-            .unwrap_or_default();
-
-        let mut station_report = StationReport {
-            id: report.id,
-            user: user.stdformat_name.clone(),
-            ..Default::default()
-        };
-
-        for (field, field_type) in report.fields.iter().zip(report_type.fields.iter()) {
-            match field_type.id.as_str() {
-                TYPE_ID => {
-                    let options = field_type
-                        .options
-                        .clone()
-                        .ok_or_else(|| anyhow!("Failed to get type options"))?;
-                    let id = parse_string(field).context("Failed to get type id")?;
-                    station_report.r#type = Type::new(options, &id)?;
-                }
-                NOTE_ID => {
-                    station_report.note = parse_string(field).context("Failed to get note")?;
-                }
-                _ => bail!("Unknown station report type \"{}\"", field_type.name),
-            };
-        }
-        absent_reports.push(station_report);
-    }
-
-    Ok(absent_reports)
-}
-pub fn print_station_reports(reports: Vec<StationReport>) {
-    let mut table = Table::new();
-    table.set_content_arrangement(ContentArrangement::Dynamic);
-    table.set_header(STATION_REPORTS_HEADERS);
-    for report in reports {
-        table.add_row(vec![
-            report.id.to_string(),
-            report.user,
-            report.r#type.to_string(),
-            report.note,
-        ]);
-    }
-
-    println!("{table}");
 }
