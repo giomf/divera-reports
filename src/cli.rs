@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(version, about = "Divera reports", long_about = None)]
@@ -7,7 +7,10 @@ pub enum Cli {
     /// Initialize the config
     Init(Init),
 
-    Test(Test),
+    ReportTypes,
+
+    #[command(subcommand)]
+    Report(Report),
 }
 
 #[derive(Debug, Parser)]
@@ -20,5 +23,10 @@ pub struct Init {
     pub divera_password: String,
 }
 
-#[derive(Debug, Parser)]
-pub struct Test {}
+#[derive(Debug, Subcommand)]
+pub enum Report {
+    Absences {},
+    Roster {},
+    Station {},
+    FireOperation {},
+}

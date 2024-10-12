@@ -6,7 +6,12 @@ This document contains the help content for the `divera-reports` command-line pr
 
 * [`divera-reports`↴](#divera-reports)
 * [`divera-reports init`↴](#divera-reports-init)
-* [`divera-reports test`↴](#divera-reports-test)
+* [`divera-reports report-types`↴](#divera-reports-report-types)
+* [`divera-reports report`↴](#divera-reports-report)
+* [`divera-reports report absences`↴](#divera-reports-report-absences)
+* [`divera-reports report roster`↴](#divera-reports-report-roster)
+* [`divera-reports report station`↴](#divera-reports-report-station)
+* [`divera-reports report fire-operation`↴](#divera-reports-report-fire-operation)
 
 ## `divera-reports`
 
@@ -17,7 +22,8 @@ Divera reports
 ###### **Subcommands:**
 
 * `init` — Initialize the config
-* `test` — 
+* `report-types` — 
+* `report` — 
 
 
 
@@ -34,9 +40,46 @@ Initialize the config
 
 
 
-## `divera-reports test`
+## `divera-reports report-types`
 
-**Usage:** `divera-reports test`
+**Usage:** `divera-reports report-types`
+
+
+
+## `divera-reports report`
+
+**Usage:** `divera-reports report <COMMAND>`
+
+###### **Subcommands:**
+
+* `absences` — 
+* `roster` — 
+* `station` — 
+* `fire-operation` — 
+
+
+
+## `divera-reports report absences`
+
+**Usage:** `divera-reports report absences`
+
+
+
+## `divera-reports report roster`
+
+**Usage:** `divera-reports report roster`
+
+
+
+## `divera-reports report station`
+
+**Usage:** `divera-reports report station`
+
+
+
+## `divera-reports report fire-operation`
+
+**Usage:** `divera-reports report fire-operation`
 
 
 

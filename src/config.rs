@@ -28,7 +28,9 @@ impl Config {
 
     pub fn read() -> Self {
         let config = fs::read_to_string(CONFIG_PATH).expect("Unable to read config");
-        toml::from_str(&config).expect("Unable to parse config")
+        let config = toml::from_str(&config).expect("Unable to parse config");
+        log::debug!("Read config: {:#?}", config);
+        config
     }
 
     pub fn write(&self) {
