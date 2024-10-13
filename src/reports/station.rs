@@ -2,14 +2,16 @@ use std::{collections::HashMap, fmt::Display};
 
 use anyhow::{anyhow, bail, Context, Result};
 use comfy_table::{ContentArrangement, Table};
+use rust_xlsxwriter::Workbook;
 
 use crate::divera::schema::response;
 
-use super::{parse_string, Reports};
+use super::{parse_string, set_table, Reports};
 
 const TYPE_ID: &str = "35e2d05a-1368-43b5-8611-4afc319c95da";
 const NOTE_ID: &str = "383b1c3c-4470-440a-bf03-27b315778576";
 
+const TITLE: &str = "Verbesserungsv_Feuerwehrhaus";
 const TYPE_TEXT: &str = "Art";
 const NOTE_TEXT: &str = "Mitteilung";
 
@@ -115,8 +117,23 @@ impl Reports for Vec<StationReport> {
         println!("{table}");
     }
 
-    fn write_xlsx(&self) {
-        todo!()
+    fn write_xlsx(self, path: &std::path::Path) -> Result<()> {
+        let mut workbook = Workbook::new();
+        workbook.read_only_recommended();
+
+        let worksheet = workbook.add_worksheet().set_name(TITLE)?;
+        set_table(worksheet, &STATION_REPORTS_HEADERS, self.len())?;
+
+        for (index, report) in self.into_iter().enumerate() {
+            let row = (index + 1) as u32;
+            worksheet.write(row, 0, report.id)?;
+            worksheet.write(row, 1, report.user)?;
+            worksheet.write(row, 2, report.r#type.to_string())?;
+            worksheet.write(row, 3, report.note)?;
+        }
+        worksheet.autofit();
+        workbook.save(path)?;
+        Ok(())
     }
 }
 

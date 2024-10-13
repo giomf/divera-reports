@@ -16,7 +16,6 @@ use config::Config;
 const REPORT_ID_ABSENCES: i64 = 10538;
 const REPORT_ID_STATION: i64 = 14307;
 const REPORT_ID_ROSTER: i64 = 12112;
-const REPORT_ID_FIRE_OPERATION: i64 = 11146;
 
 fn main() -> Result<()> {
     env_logger::init();
@@ -42,13 +41,12 @@ fn main() -> Result<()> {
         Cli::Report(cmd) => {
             let config = Config::read();
             let login = divera::login(config.divera.username, config.divera.password)?;
-            dbg!(&login);
             let all = divera::pull_all(&login.user.access_token)?;
             let users = all.cluster.consumer;
             let report_types = all.cluster.reporttypes;
 
             match cmd {
-                cli::Report::Absences {} => {
+                cli::Report::Absences(arguments) => {
                     let reports = divera::reports(&login.user.access_token, REPORT_ID_ABSENCES)?;
                     let report_type = report_types
                         .items
@@ -58,23 +56,47 @@ fn main() -> Result<()> {
                     let absent_reports =
                         Vec::<AbsentReport>::new_from_reports(report_type, reports, users)
                             .context("Failed to create absent reports")?;
-                    absent_reports.print();
+                    if arguments.print {
+                        absent_reports.print();
+                    } else {
+                        if let Some(output_path) = arguments.write {
+                            absent_reports
+                                .write_xlsx(Path::new(&output_path))
+                                .context("Failed to write absent reports to xlsx")?;
+                        }
+                    }
                 }
-                cli::Report::Roster {} => {
+                cli::Report::Roster(arguments) => {
                     let reports = divera::reports(&login.user.access_token, REPORT_ID_ROSTER)?;
                     let report_type = report_types.items.get(&REPORT_ID_ROSTER).cloned().unwrap();
                     let roster_reports =
                         Vec::<RosterReport>::new_from_reports(report_type, reports, users)
                             .context("Failed to create roster reports")?;
-                    roster_reports.print();
+                    if arguments.print {
+                        roster_reports.print();
+                    } else {
+                        if let Some(output_path) = arguments.write {
+                            roster_reports
+                                .write_xlsx(Path::new(&output_path))
+                                .context("Failed to write roster reports to xlsx")?;
+                        }
+                    }
                 }
-                cli::Report::Station {} => {
+                cli::Report::Station(arguments) => {
                     let reports = divera::reports(&login.user.access_token, REPORT_ID_STATION)?;
                     let report_type = report_types.items.get(&REPORT_ID_STATION).cloned().unwrap();
                     let station_reports =
                         Vec::<StationReport>::new_from_reports(report_type, reports, users)
                             .context("Failed to create station reports")?;
-                    station_reports.print();
+                    if arguments.print {
+                        station_reports.print();
+                    } else {
+                        if let Some(output_path) = arguments.write {
+                            station_reports
+                                .write_xlsx(Path::new(&output_path))
+                                .context("Failed to write station reports to xlsx")?;
+                        }
+                    }
                 }
             }
         }

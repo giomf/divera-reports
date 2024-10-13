@@ -21,8 +21,8 @@ Divera reports
 ###### **Subcommands:**
 
 * `init` — Initialize the config
-* `report-types` — 
-* `report` — 
+* `report-types` — Prints available report types
+* `report` — Prints or writes reports
 
 
 
@@ -41,37 +41,62 @@ Initialize the config
 
 ## `divera-reports report-types`
 
+Prints available report types
+
 **Usage:** `divera-reports report-types`
 
 
 
 ## `divera-reports report`
 
+Prints or writes reports
+
 **Usage:** `divera-reports report <COMMAND>`
 
 ###### **Subcommands:**
 
-* `absences` — 
-* `roster` — 
-* `station` — 
+* `absences` — Absences reports
+* `roster` — Roster reports
+* `station` — Station reports
 
 
 
 ## `divera-reports report absences`
 
-**Usage:** `divera-reports report absences`
+Absences reports
+
+**Usage:** `divera-reports report absences <--print|--write <WRITE>>`
+
+###### **Options:**
+
+* `--print` — Prints the reports in a table format
+* `--write <WRITE>` — Writes the reports to an xlsx file
 
 
 
 ## `divera-reports report roster`
 
-**Usage:** `divera-reports report roster`
+Roster reports
+
+**Usage:** `divera-reports report roster <--print|--write <WRITE>>`
+
+###### **Options:**
+
+* `--print` — Prints the reports in a table format
+* `--write <WRITE>` — Writes the reports to an xlsx file
 
 
 
 ## `divera-reports report station`
 
-**Usage:** `divera-reports report station`
+Station reports
+
+**Usage:** `divera-reports report station <--print|--write <WRITE>>`
+
+###### **Options:**
+
+* `--print` — Prints the reports in a table format
+* `--write <WRITE>` — Writes the reports to an xlsx file
 
 
 

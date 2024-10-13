@@ -1,13 +1,15 @@
-use std::{collections::HashMap, fmt::Display};
+use std::{collections::HashMap, fmt::Display, path::Path};
 
 use anyhow::{anyhow, bail, Context, Result};
 use chrono::{DateTime, NaiveDate};
-use comfy_table::{ContentArrangement, Table};
+use comfy_table;
+use rust_xlsxwriter::{Format, Workbook};
 use serde_json::Value;
 
-use super::{parse_string, Reports};
+use super::{parse_string, set_table, Reports};
 use crate::divera::schema::response;
 
+const TITLE: &str = "Abwesenheiten";
 const REASON_ID: &str = "f75a352a-0b9c-4c7e-bf7a-e67e6048f1f1";
 const BEGIN_ID: &str = "10f05309-e584-4470-a0db-ce6bb15ade34";
 const END_ID: &str = "a9246571-63fd-4cdf-b6f1-77d93173b362";
@@ -72,11 +74,11 @@ impl AbsentReport {
             match field_type.id.as_str() {
                 BEGIN_ID => {
                     absent_report.begin =
-                        parse_date(field).context("Failed to set begin of absent report")?
+                        parse_date(field).context("Failed to get begin of absent report")?
                 }
                 END_ID => {
                     absent_report.end =
-                        parse_date(field).context("Failed to set end of absent report")?
+                        parse_date(field).context("Failed to get end of absent report")?
                 }
                 REASON_ID => {
                     let options = field_type
@@ -120,25 +122,44 @@ impl Reports for Vec<AbsentReport> {
     }
 
     fn print(self) {
-        let mut table = Table::new();
-        table.set_content_arrangement(ContentArrangement::Dynamic);
+        let mut table = comfy_table::Table::new();
+        table.set_content_arrangement(comfy_table::ContentArrangement::Dynamic);
         table.set_header(ABSENT_REPORTS_HEADERS);
         for report in self {
-            table.add_row(vec![
+            let row = vec![
                 report.id.to_string(),
                 report.user,
                 report.reason.to_string(),
                 report.begin.to_string(),
                 report.end.to_string(),
                 report.note,
-            ]);
+            ];
+            table.add_row(row);
         }
 
         println!("{table}");
     }
 
-    fn write_xlsx(&self) {
-        todo!()
+    fn write_xlsx(self, path: &Path) -> Result<()> {
+        let mut workbook = Workbook::new();
+        workbook.read_only_recommended();
+
+        let worksheet = workbook.add_worksheet().set_name(TITLE)?;
+        set_table(worksheet, &ABSENT_REPORTS_HEADERS, self.len())?;
+
+        let date_format = Format::new().set_num_format("dd.mm.yyyy");
+        for (index, report) in self.into_iter().enumerate() {
+            let row = (index + 1) as u32;
+            worksheet.write(row, 0, report.id)?;
+            worksheet.write(row, 1, report.user)?;
+            worksheet.write(row, 2, report.reason.to_string())?;
+            worksheet.write_datetime_with_format(row, 3, report.begin, &date_format)?;
+            worksheet.write_datetime_with_format(row, 4, report.end, &date_format)?;
+            worksheet.write(row, 5, report.note)?;
+        }
+        worksheet.autofit();
+        workbook.save(path)?;
+        Ok(())
     }
 }
 

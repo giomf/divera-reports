@@ -2,8 +2,9 @@ use std::{collections::HashMap, fmt::Display};
 
 use anyhow::{anyhow, bail, Context, Result};
 use comfy_table::{ContentArrangement, Table};
+use rust_xlsxwriter::Workbook;
 
-use super::{parse_string, Reports};
+use super::{parse_string, set_table, Reports};
 use crate::divera::schema::response;
 
 const TYPE_ID: &str = "ab71921a-70b5-46de-b198-e342c50fe262";
@@ -12,6 +13,8 @@ const PARTICIPATION_ID: &str = "d8049a3a-407c-480f-93f8-6736a27e9d6e";
 const TIMESCOPE_ID: &str = "2fa25c9d-8ed2-4a05-ab19-7464a4098572";
 const DESCRIPTION_ID: &str = "2cefd98b-9ea5-4329-b657-7a2a74483c51";
 const POTENTIAL_DATE_ID: &str = "d6370fa1-64e4-4108-aa73-6ee528aa7210";
+
+const TITLE: &str = "Vorschläge_Dienstplan";
 const TYPE_TEXT: &str = "Art";
 const TOPIC_TEXT: &str = "Thema";
 const PARTICIPATION_TEXT: &str = "Mitgestaltung";
@@ -185,8 +188,39 @@ impl Reports for Vec<RosterReport> {
         println!("{table}");
     }
 
-    fn write_xlsx(&self) {
-        todo!()
+    fn write_xlsx(self, path: &std::path::Path) -> Result<()> {
+        let mut workbook = Workbook::new();
+        workbook.read_only_recommended();
+
+        let worksheet = workbook.add_worksheet().set_name(TITLE)?;
+        set_table(worksheet, &ROSTER_REPORTS_HEADERS, self.len())?;
+
+        for (index, report) in self.into_iter().enumerate() {
+            let row = (index + 1) as u32;
+            worksheet.write(row, 0, report.id)?;
+            worksheet.write(row, 1, report.user)?;
+            worksheet.write(row, 2, report.r#type.to_string())?;
+            worksheet.write(
+                row,
+                3,
+                report
+                    .participation
+                    .map_or(String::default(), |participation| participation.to_string()),
+            )?;
+            worksheet.write(
+                row,
+                4,
+                report
+                    .time_scope
+                    .map_or(String::default(), |time_scope| time_scope.to_string()),
+            )?;
+            worksheet.write(row, 5, report.potential_date)?;
+            worksheet.write(row, 6, report.topic)?;
+            worksheet.write(row, 7, report.description)?;
+        }
+        worksheet.autofit();
+        workbook.save(path)?;
+        Ok(())
     }
 }
 

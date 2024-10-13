@@ -2,3 +2,4 @@
 config.toml
 .direnv/
 .envrc
+*.xlsx
