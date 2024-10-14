@@ -28,18 +28,24 @@ fn main() -> Result<()> {
                 bail!("Config already exists. Aborting");
             }
 
-            let config = Config::new(cmd.divera_username, cmd.divera_password);
-            config.write();
+            let config = Config::new(
+                cmd.divera_username,
+                cmd.divera_password,
+                cmd.webdav_username,
+                cmd.webdav_password,
+                cmd.webdav_directory,
+            );
+            config.write()?;
         }
         Cli::ReportTypes => {
-            let config = Config::read();
+            let config = Config::read()?;
             let login = divera::login(config.divera.username, config.divera.password)?;
             let report_types = divera::report_types(&login.user.access_token)?;
             println!("{report_types}");
         }
 
         Cli::Report(cmd) => {
-            let config = Config::read();
+            let config = Config::read()?;
             let login = divera::login(config.divera.username, config.divera.password)?;
             let all = divera::pull_all(&login.user.access_token)?;
             let users = all.cluster.consumer;
@@ -58,12 +64,14 @@ fn main() -> Result<()> {
                             .context("Failed to create absent reports")?;
                     if arguments.print {
                         absent_reports.print();
-                    } else {
-                        if let Some(output_path) = arguments.write {
-                            absent_reports
-                                .write_xlsx(Path::new(&output_path))
-                                .context("Failed to write absent reports to xlsx")?;
-                        }
+                    } else if let Some(output_path) = arguments.write {
+                        absent_reports
+                            .write_xlsx(Path::new(&output_path))
+                            .context("Failed to write absent reports to xlsx")?;
+                    } else if let Some(file_name) = arguments.upload {
+                        absent_reports
+                            .upload(&file_name, config.webdav)
+                            .context("Failed to upload station reports")?;
                     }
                 }
                 cli::Report::Roster(arguments) => {
@@ -74,12 +82,14 @@ fn main() -> Result<()> {
                             .context("Failed to create roster reports")?;
                     if arguments.print {
                         roster_reports.print();
-                    } else {
-                        if let Some(output_path) = arguments.write {
-                            roster_reports
-                                .write_xlsx(Path::new(&output_path))
-                                .context("Failed to write roster reports to xlsx")?;
-                        }
+                    } else if let Some(output_path) = arguments.write {
+                        roster_reports
+                            .write_xlsx(Path::new(&output_path))
+                            .context("Failed to write roster reports to xlsx")?;
+                    } else if let Some(file_name) = arguments.upload {
+                        roster_reports
+                            .upload(&file_name, config.webdav)
+                            .context("Failed to upload station reports")?;
                     }
                 }
                 cli::Report::Station(arguments) => {
@@ -90,12 +100,14 @@ fn main() -> Result<()> {
                             .context("Failed to create station reports")?;
                     if arguments.print {
                         station_reports.print();
-                    } else {
-                        if let Some(output_path) = arguments.write {
-                            station_reports
-                                .write_xlsx(Path::new(&output_path))
-                                .context("Failed to write station reports to xlsx")?;
-                        }
+                    } else if let Some(output_path) = arguments.write {
+                        station_reports
+                            .write_xlsx(Path::new(&output_path))
+                            .context("Failed to write station reports to xlsx")?;
+                    } else if let Some(file_name) = arguments.upload {
+                        station_reports
+                            .upload(&file_name, config.webdav)
+                            .context("Failed to upload station reports")?;
                     }
                 }
             }

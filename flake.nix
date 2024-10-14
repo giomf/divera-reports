@@ -12,7 +12,7 @@
       let pkgs = nixpkgs.legacyPackages.${system};
       in {
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [ cargo rustc rust-analyzer rustfmt ];
+          buildInputs = with pkgs; [ cargo rustc rust-analyzer rustfmt openssl pkg-config];
           env = {
           };
         };

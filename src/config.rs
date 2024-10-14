@@ -1,5 +1,6 @@
 use std::fs;
 
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use toml;
 
@@ -8,6 +9,7 @@ pub const CONFIG_PATH: &str = "./config.toml";
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
     pub divera: Divera,
+    pub webdav: WebDav,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -16,25 +18,44 @@ pub struct Divera {
     pub password: String,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct WebDav {
+    pub username: String,
+    pub password: String,
+    pub root_directory: String,
+}
+
 impl Config {
-    pub fn new(divera_username: String, divera_password: String) -> Self {
+    pub fn new(
+        divera_username: String,
+        divera_password: String,
+        webdav_username: String,
+        webdav_password: String,
+        webdav_directory: String,
+    ) -> Self {
         Config {
             divera: Divera {
                 username: divera_username,
                 password: divera_password,
             },
+            webdav: WebDav {
+                username: webdav_username,
+                password: webdav_password,
+                root_directory: webdav_directory,
+            },
         }
     }
 
-    pub fn read() -> Self {
-        let config = fs::read_to_string(CONFIG_PATH).expect("Unable to read config");
-        let config = toml::from_str(&config).expect("Unable to parse config");
+    pub fn read() -> Result<Self> {
+        let config = fs::read_to_string(CONFIG_PATH).context("Failed to read config")?;
+        let config = toml::from_str(&config).context("Failed to parse config")?;
         log::debug!("Read config: {:#?}", config);
-        config
+        Ok(config)
     }
 
-    pub fn write(&self) {
-        let config = toml::to_string(&self).expect("Unable to render config");
-        fs::write(CONFIG_PATH, config).expect("Unable to write config");
+    pub fn write(&self) -> Result<()> {
+        let config = toml::to_string(&self).context("Failed to render config")?;
+        fs::write(CONFIG_PATH, config).context("Failed to write config")?;
+        Ok(())
     }
 }

@@ -30,12 +30,15 @@ Divera reports
 
 Initialize the config
 
-**Usage:** `divera-reports init --divera-username <DIVERA_USERNAME> --divera-password <DIVERA_PASSWORD>`
+**Usage:** `divera-reports init --divera-username <DIVERA_USERNAME> --divera-password <DIVERA_PASSWORD> --webdav-username <WEBDAV_USERNAME> --webdav-password <WEBDAV_PASSWORD> --webdav-directory <WEBDAV_DIRECTORY>`
 
 ###### **Options:**
 
 * `--divera-username <DIVERA_USERNAME>` — Username for divera247
 * `--divera-password <DIVERA_PASSWORD>` — Password for divera247
+* `--webdav-username <WEBDAV_USERNAME>` — Username for webdav server
+* `--webdav-password <WEBDAV_PASSWORD>` — Password for webdav server
+* `--webdav-directory <WEBDAV_DIRECTORY>` — Root directory for webdav server
 
 
 
@@ -65,12 +68,13 @@ Prints or writes reports
 
 Absences reports
 
-**Usage:** `divera-reports report absences <--print|--write <WRITE>>`
+**Usage:** `divera-reports report absences <--print|--write <WRITE>|--upload <UPLOAD>>`
 
 ###### **Options:**
 
 * `--print` — Prints the reports in a table format
 * `--write <WRITE>` — Writes the reports to an xlsx file
+* `--upload <UPLOAD>` — Exports the report as xlsx and upload it to webdav server
 
 
 
@@ -78,12 +82,13 @@ Absences reports
 
 Roster reports
 
-**Usage:** `divera-reports report roster <--print|--write <WRITE>>`
+**Usage:** `divera-reports report roster <--print|--write <WRITE>|--upload <UPLOAD>>`
 
 ###### **Options:**
 
 * `--print` — Prints the reports in a table format
 * `--write <WRITE>` — Writes the reports to an xlsx file
+* `--upload <UPLOAD>` — Exports the report as xlsx and upload it to webdav server
 
 
 
@@ -91,12 +96,13 @@ Roster reports
 
 Station reports
 
-**Usage:** `divera-reports report station <--print|--write <WRITE>>`
+**Usage:** `divera-reports report station <--print|--write <WRITE>|--upload <UPLOAD>>`
 
 ###### **Options:**
 
 * `--print` — Prints the reports in a table format
 * `--write <WRITE>` — Writes the reports to an xlsx file
+* `--upload <UPLOAD>` — Exports the report as xlsx and upload it to webdav server
 
 
 

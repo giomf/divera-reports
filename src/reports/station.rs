@@ -22,7 +22,7 @@ const TYPE_PROBLEM_ID: &str = "ff6b3ae9-9378-4f92-bd4f-b1203c48aff3";
 
 const TYPE_CLARIFICATION_TEXT: &str = "Klärungsbedarf";
 const TYPE_DESIGN_TEXT: &str = "Ausgestaltung";
-const TYPE_IMPROVEMENT_TEXT: &str = "Verbersserung";
+const TYPE_IMPROVEMENT_TEXT: &str = "Verbesserung";
 const TYPE_PROBLEM_TEXT: &str = "Problem";
 
 const STATION_REPORTS_HEADERS: [&str; 4] = ["ID", "Mitglied", TYPE_TEXT, NOTE_TEXT];

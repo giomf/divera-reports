@@ -2,13 +2,15 @@ pub mod absent;
 pub mod roster;
 pub mod station;
 
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, fs::File, path::Path};
 
 use anyhow::{anyhow, Context, Result};
 use rust_xlsxwriter::{Format, TableColumn, Worksheet};
+use rustydav::client::Client;
 use serde_json::Value;
+use tempfile::tempdir;
 
-use crate::divera::schema::response;
+use crate::{config::WebDav, divera::schema::response};
 
 pub trait Reports {
     fn new_from_reports(
@@ -20,6 +22,23 @@ pub trait Reports {
         Self: Sized;
     fn print(self);
     fn write_xlsx(self, path: &Path) -> Result<()>;
+    fn upload(self, file_name: &str, config: WebDav) -> Result<()>
+    where
+        Self: Sized,
+    {
+        let temp_dir = tempdir().context("Failed to create temp dir")?;
+        let file_path = temp_dir.path().join(file_name);
+        self.write_xlsx(&file_path)
+            .context("Failed to write reports to xlsx")?;
+
+        let webdav_client = Client::init(&config.username, &config.password);
+        let path = config.root_directory + "/" + file_name;
+        let file = File::open(file_path)?;
+        webdav_client
+            .put(file, &path)
+            .context("Failed to upload reports")?;
+        Ok(())
+    }
 }
 
 impl Default for response::Consumer {

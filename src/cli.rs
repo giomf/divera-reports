@@ -21,21 +21,31 @@ pub struct Init {
     /// Password for divera247
     #[arg(long)]
     pub divera_password: String,
+
+    /// Username for webdav server
+    #[arg(long)]
+    pub webdav_username: String,
+    /// Password for webdav server
+    #[arg(long)]
+    pub webdav_password: String,
+    /// Root directory for webdav server
+    #[arg(long)]
+    pub webdav_directory: String,
 }
 
 #[derive(Debug, Subcommand)]
 pub enum Report {
     /// Absences reports
-    Absences(PrintOrWrite),
+    Absences(PrintWriteUpload),
     /// Roster reports
-    Roster(PrintOrWrite),
+    Roster(PrintWriteUpload),
     /// Station reports
-    Station(PrintOrWrite),
+    Station(PrintWriteUpload),
 }
 
 #[derive(Debug, Args)]
 #[group(required = true, multiple = false)]
-pub struct PrintOrWrite {
+pub struct PrintWriteUpload {
     /// Prints the reports in a table format
     #[arg(long)]
     pub print: bool,
@@ -43,4 +53,8 @@ pub struct PrintOrWrite {
     /// Writes the reports to an xlsx file
     #[arg(long)]
     pub write: Option<String>,
+
+    /// Exports the report as xlsx and upload it to webdav server
+    #[arg(long)]
+    pub upload: Option<String>,
 }
