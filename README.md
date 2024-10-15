@@ -16,13 +16,17 @@ This document contains the help content for the `divera-reports` command-line pr
 
 Divera reports
 
-**Usage:** `divera-reports <COMMAND>`
+**Usage:** `divera-reports [OPTIONS] <COMMAND>`
 
 ###### **Subcommands:**
 
 * `init` — Initialize the config
 * `report-types` — Prints available report types
 * `report` — Prints or writes reports
+
+###### **Options:**
+
+* `-c`, `--config <CONFIG>` — Config path
 
 
 

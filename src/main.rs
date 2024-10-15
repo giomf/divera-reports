@@ -6,25 +6,29 @@ mod reports;
 use anyhow::{bail, Context, Result};
 use clap::Parser;
 use comfy_table::{ContentArrangement, Table};
+use config::Config;
 use env_logger;
 use reports::{absent::AbsentReport, roster::RosterReport, station::StationReport, Reports};
 use std::{fmt::Display, path::Path};
 
-use cli::Cli;
-use config::Config;
+use cli::{Cli, Commands};
 
 const REPORT_ID_ABSENCES: i64 = 10538;
 const REPORT_ID_STATION: i64 = 14307;
 const REPORT_ID_ROSTER: i64 = 12112;
 
+pub const CONFIG_PATH: &str = "./config.toml";
+
 fn main() -> Result<()> {
     env_logger::init();
 
     let cli = Cli::parse();
+    let config_path = cli.config.unwrap_or(CONFIG_PATH.to_string());
+    let config_path = Path::new(&config_path);
 
-    match cli {
-        Cli::Init(cmd) => {
-            if Path::new(config::CONFIG_PATH).exists() {
+    match cli.command {
+        Commands::Init(cmd) => {
+            if config_path.exists() {
                 bail!("Config already exists. Aborting");
             }
 
@@ -35,17 +39,17 @@ fn main() -> Result<()> {
                 cmd.webdav_password,
                 cmd.webdav_directory,
             );
-            config.write()?;
+            config.write(config_path)?;
         }
-        Cli::ReportTypes => {
-            let config = Config::read()?;
+        Commands::ReportTypes => {
+            let config = Config::read(config_path)?;
             let login = divera::login(config.divera.username, config.divera.password)?;
             let report_types = divera::report_types(&login.user.access_token)?;
             println!("{report_types}");
         }
 
-        Cli::Report(cmd) => {
-            let config = Config::read()?;
+        Commands::Report(cmd) => {
+            let config = Config::read(config_path)?;
             let login = divera::login(config.divera.username, config.divera.password)?;
             let all = divera::pull_all(&login.user.access_token)?;
             let users = all.cluster.consumer;
