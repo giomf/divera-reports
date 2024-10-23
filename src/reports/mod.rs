@@ -1,22 +1,26 @@
 pub mod absent;
+pub mod fire_operation;
 pub mod roster;
 pub mod station;
 
-use std::{collections::HashMap, fs::File, path::Path};
-
 use anyhow::{anyhow, Context, Result};
+use chrono::{DateTime, NaiveDate};
 use rust_xlsxwriter::{Format, TableColumn, Worksheet};
 use rustydav::client::Client;
 use serde_json::Value;
+use std::{collections::HashMap, fs::File, path::Path};
 use tempfile::tempdir;
 
-use crate::{config::WebDav, divera::schema::response};
+use crate::{
+    config::WebDav,
+    divera::schema::response::{self},
+};
 
 pub trait Reports {
     fn new_from_reports(
-        report_type: response::ReportTypesItem,
+        report_type: &response::ReportTypesItem,
         reports: response::Reports,
-        users: HashMap<String, response::Consumer>,
+        users: &HashMap<String, response::Consumer>,
     ) -> Result<Self>
     where
         Self: Sized;
@@ -80,4 +84,26 @@ fn parse_string(value: &Value) -> Result<String> {
         .as_str()
         .ok_or_else(|| anyhow!("Value not a string"))?
         .to_string())
+}
+
+fn parse_date(value: &Value) -> Result<NaiveDate> {
+    let timestamp: i64 = if value.is_i64() {
+        value.as_i64().unwrap()
+    } else if value.is_f64() {
+        value.as_f64().unwrap().trunc() as i64
+    } else {
+        // Since divera has strange coding for their date types
+        // (Sometimes 12342134 and sometimes 12342134.0) this hack is needed.
+        // First get the string, parse it into a float and then truncate it...
+        value
+            .as_str()
+            .ok_or_else(|| anyhow!("Failed to get string from value"))?
+            .parse::<f64>()?
+            .trunc() as i64
+    };
+    let datetime = DateTime::from_timestamp(timestamp as i64, 0)
+        .ok_or_else(|| anyhow!("Failed to parse \"{}\" to datetime", timestamp))?
+        .naive_utc()
+        .date();
+    Ok(datetime)
 }

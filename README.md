@@ -11,6 +11,7 @@ This document contains the help content for the `divera-reports` command-line pr
 * [`divera-reports report absences`↴](#divera-reports-report-absences)
 * [`divera-reports report roster`↴](#divera-reports-report-roster)
 * [`divera-reports report station`↴](#divera-reports-report-station)
+* [`divera-reports report fire-operation`↴](#divera-reports-report-fire-operation)
 
 ## `divera-reports`
 
@@ -65,6 +66,7 @@ Prints or writes reports
 * `absences` — Absences reports
 * `roster` — Roster reports
 * `station` — Station reports
+* `fire-operation` — Fire Operation reports
 
 
 
@@ -101,6 +103,20 @@ Roster reports
 Station reports
 
 **Usage:** `divera-reports report station <--print|--write <WRITE>|--upload <UPLOAD>>`
+
+###### **Options:**
+
+* `--print` — Prints the reports in a table format
+* `--write <WRITE>` — Writes the reports to an xlsx file
+* `--upload <UPLOAD>` — Exports the report as xlsx and upload it to webdav server
+
+
+
+## `divera-reports report fire-operation`
+
+Fire Operation reports
+
+**Usage:** `divera-reports report fire-operation <--print|--write <WRITE>|--upload <UPLOAD>>`
 
 ###### **Options:**
 

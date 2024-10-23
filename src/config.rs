@@ -4,19 +4,19 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use toml;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Config {
     pub divera: Divera,
     pub webdav: WebDav,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Divera {
     pub username: String,
     pub password: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct WebDav {
     pub username: String,
     pub password: String,

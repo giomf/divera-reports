@@ -25,7 +25,8 @@ in {
       description = "Uploads station divera reports";
       serviceConfig = {
         Type = "simple";
-        ExecStart = "${pkg}/bin/divera-reports --config ${cfg.config_path} report station --upload Verbesserungsvorschläge_Feuerwehrhaus.xlsx";
+        ExecStart =
+          "${pkg}/bin/divera-reports --config ${cfg.config_path} report station --upload Verbesserungsvorschläge_Feuerwehrhaus.xlsx";
         ProtectHome = "read-only";
       };
     };
@@ -34,7 +35,8 @@ in {
       description = "Uploads roster divera reports";
       serviceConfig = {
         Type = "simple";
-        ExecStart = "${pkg}/bin/divera-reports --config ${cfg.config_path} report roster --upload Vorschläge_Dienstplan.xlsx";
+        ExecStart =
+          "${pkg}/bin/divera-reports --config ${cfg.config_path} report roster --upload Vorschläge_Dienstplan.xlsx";
         ProtectHome = "read-only";
       };
     };
@@ -48,17 +50,32 @@ in {
       };
     };
 
+    systemd.services."${service_name}-fire-operation" = {
+      description = "Uploads absences divera reports";
+      serviceConfig = {
+        Type = "simple";
+        ExecStart =
+          "${pkg}/bin/divera-reports --config ${cfg.config_path} report fire-operation --upload Atemschutz_Kurzbericht.xlsx";
+        ProtectHome = "read-only";
+      };
+    };
+
     # Define the systemd target to group multiple services
     systemd.targets.${service_name} = {
       description = "Group of divera reports services";
-      bindsTo = [ "${service_name}-station.service" "${service_name}-roster.service" "${service_name}-absences.service"];
+      bindsTo = [
+        "${service_name}-absences.service"
+        "${service_name}-fire-operation.service"
+        "${service_name}-roster.service"
+        "${service_name}-station.service"
+      ];
     };
 
     systemd.timers.${service_name} = {
       description = "${service_name} timer";
       wantedBy = [ "timers.target" ]; # Ensure the timer is activated at boot
       timerConfig = {
-        OnCalendar = cfg.timer; 
+        OnCalendar = cfg.timer;
         Persistent = true; # Ensures the job runs after missed events (e.g., after reboot)
         Unit = "${service_name}.target";
       };

@@ -1,29 +1,25 @@
 use std::{collections::HashMap, fmt::Display};
 
-use anyhow::{anyhow, bail, Context, Result};
+use super::{parse_string, set_table, Reports};
+use crate::divera::schema::response;
+use anyhow::{bail, Context, Result};
 use comfy_table::{ContentArrangement, Table};
 use rust_xlsxwriter::Workbook;
 
-use crate::divera::schema::response;
-
-use super::{parse_string, set_table, Reports};
-
-const TYPE_ID: &str = "35e2d05a-1368-43b5-8611-4afc319c95da";
 const NOTE_ID: &str = "383b1c3c-4470-440a-bf03-27b315778576";
-
-const TITLE: &str = "Verbesserungsv_Feuerwehrhaus";
-const TYPE_TEXT: &str = "Art";
-const NOTE_TEXT: &str = "Mitteilung";
-
 const TYPE_CLARIFICATION_ID: &str = "97d63a1a-f497-4e2c-bfa4-666038553b7a";
 const TYPE_DESIGN_ID: &str = "e499b1dd-5977-47d1-a554-bff91f7e3ef0";
+const TYPE_ID: &str = "35e2d05a-1368-43b5-8611-4afc319c95da";
 const TYPE_IMPROVEMENT_ID: &str = "afcb458f-635b-43c9-afbb-55280f8fd2f1";
 const TYPE_PROBLEM_ID: &str = "ff6b3ae9-9378-4f92-bd4f-b1203c48aff3";
 
+const TITLE: &str = "Verbesserungsv_Feuerwehrhaus";
+const NOTE_TEXT: &str = "Mitteilung";
 const TYPE_CLARIFICATION_TEXT: &str = "Klärungsbedarf";
 const TYPE_DESIGN_TEXT: &str = "Ausgestaltung";
 const TYPE_IMPROVEMENT_TEXT: &str = "Verbesserung";
 const TYPE_PROBLEM_TEXT: &str = "Problem";
+const TYPE_TEXT: &str = "Art";
 
 const STATION_REPORTS_HEADERS: [&str; 4] = ["ID", "Mitglied", TYPE_TEXT, NOTE_TEXT];
 
@@ -59,12 +55,8 @@ impl StationReport {
         for (field, field_type) in report.fields.iter().zip(report_type.fields.iter()) {
             match field_type.id.as_str() {
                 TYPE_ID => {
-                    let options = field_type
-                        .options
-                        .clone()
-                        .ok_or_else(|| anyhow!("Failed to get type options"))?;
                     let id = parse_string(field).context("Failed to get type id")?;
-                    station_report.r#type = Type::new(options, &id)?;
+                    station_report.r#type = Type::new(&id)?;
                 }
                 NOTE_ID => {
                     station_report.note = parse_string(field).context("Failed to get note")?;
@@ -79,21 +71,20 @@ impl StationReport {
 
 impl Reports for Vec<StationReport> {
     fn new_from_reports(
-        report_type: response::ReportTypesItem,
+        report_type: &response::ReportTypesItem,
         reports: response::Reports,
-        users: HashMap<String, response::Consumer>,
+        users: &HashMap<String, response::Consumer>,
     ) -> Result<Self>
     where
         Self: Sized,
     {
         let mut station_reports: Vec<StationReport> = Vec::default();
-
         for report in reports.items {
             let user = users
                 .get(&report.user_cluster_relation_id.to_string())
                 .cloned()
                 .unwrap_or_default();
-            let station_report = StationReport::new_from_report(&report_type, &report, &user)
+            let station_report = StationReport::new_from_report(report_type, &report, &user)
                 .context("Failed to create station report")?;
             station_reports.push(station_report);
         }
@@ -138,18 +129,13 @@ impl Reports for Vec<StationReport> {
 }
 
 impl Type {
-    pub fn new(types: Vec<response::ReportTypesItemFieldOption>, id: &str) -> Result<Self> {
-        let r#type = types
-            .iter()
-            .find(|r#type| r#type.id == id)
-            .context(format!("Type id \"{}\" can not be found in types", id))?;
-
-        let variant = match r#type.id.as_str() {
+    pub fn new(id: &str) -> Result<Self> {
+        let variant = match id {
             TYPE_CLARIFICATION_ID => Self::Clarification,
             TYPE_DESIGN_ID => Self::Design,
             TYPE_IMPROVEMENT_ID => Self::Improvement,
             TYPE_PROBLEM_ID => Self::Problem,
-            _ => bail!("Unknow type variant \"{}\"", r#type.id),
+            _ => bail!("Unknow type variant \"{}\"", id),
         };
 
         Ok(variant)

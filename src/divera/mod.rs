@@ -27,12 +27,12 @@ const ENDPOINT_REPORTS: &str = "v2/reporttypes/reports";
 const ENDPOINT_EXPORT_USERS: &str = "v2/management/export-users";
 const ENDPOINT_USERS: &str = "users";
 
-pub fn login(username: String, password: String) -> Result<response::Login> {
+pub fn login(username: &str, password: &str) -> Result<response::Login> {
     let url = create_url(BASE_URL, ENDPOINT_LOGIN);
     let body = request::LoginRequest {
         login: request::Login {
-            username,
-            password,
+            username: username.to_string(),
+            password: password.to_string(),
             jwt: false,
         },
     };

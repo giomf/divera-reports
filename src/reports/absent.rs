@@ -1,32 +1,28 @@
 use std::{collections::HashMap, fmt::Display, path::Path};
 
-use anyhow::{anyhow, bail, Context, Result};
-use chrono::{DateTime, NaiveDate};
+use super::{parse_date, parse_string, set_table, Reports};
+use crate::divera::schema::response;
+use anyhow::{bail, Context, Result};
+use chrono::NaiveDate;
 use comfy_table;
 use rust_xlsxwriter::{Format, Workbook};
-use serde_json::Value;
 
-use super::{parse_string, set_table, Reports};
-use crate::divera::schema::response;
-
-const TITLE: &str = "Abwesenheiten";
-const REASON_ID: &str = "f75a352a-0b9c-4c7e-bf7a-e67e6048f1f1";
 const BEGIN_ID: &str = "10f05309-e584-4470-a0db-ce6bb15ade34";
 const END_ID: &str = "a9246571-63fd-4cdf-b6f1-77d93173b362";
 const NOTE_ID: &str = "29091ead-0dca-4546-830a-c4143e0886ec";
-
-const REASON_TEXT: &str = "Grund";
-const BEGIN_TEXT: &str = "Von";
-const END_TEXT: &str = "Bis";
-const NOTE_TEXT: &str = "Bemerkung";
-
+const REASON_ID: &str = "f75a352a-0b9c-4c7e-bf7a-e67e6048f1f1";
 const REASON_ILLNESS_ID: &str = "cddd7081-d6a9-4869-a3f7-f821ab7a4e2f";
 const REASON_PROFESSIONALLY_ID: &str = "1ad668bf-5a17-4f5d-b762-5ce9bb20c0d9";
 const REASON_TRAINING_ID: &str = "f4913db8-0112-40d8-8efa-dad361d8829b";
 const REASON_VACATION_ID: &str = "5c66e8a3-bb3b-455a-aeb9-a4982f774dd8";
 
+const TITLE: &str = "Abwesenheiten";
+const BEGIN_TEXT: &str = "Von";
+const END_TEXT: &str = "Bis";
+const NOTE_TEXT: &str = "Bemerkung";
 const REASON_ILLNESS_TEXT: &str = "Krankheit / Dienstunfähigkeit";
 const REASON_PROFESSIONALLY_TEXT: &str = "Beruflich";
+const REASON_TEXT: &str = "Grund";
 const REASON_TRAINING_TEXT: &str = "Aus- / Fortbildung";
 const REASON_VACATION_TEXT: &str = "Urlaub";
 
@@ -81,12 +77,8 @@ impl AbsentReport {
                         parse_date(field).context("Failed to get end of absent report")?
                 }
                 REASON_ID => {
-                    let options = field_type
-                        .options
-                        .clone()
-                        .ok_or_else(|| anyhow!("Failed to get reason options"))?;
                     let id = parse_string(field).context("Failed to get reason id")?;
-                    absent_report.reason = Reason::new(options, &id)?;
+                    absent_report.reason = Reason::new(&id)?;
                 }
                 NOTE_ID => {
                     absent_report.note = parse_string(field).context("Failed to get note")?;
@@ -99,9 +91,9 @@ impl AbsentReport {
 }
 impl Reports for Vec<AbsentReport> {
     fn new_from_reports(
-        report_type: response::ReportTypesItem,
+        report_type: &response::ReportTypesItem,
         reports: response::Reports,
-        users: HashMap<String, response::Consumer>,
+        users: &HashMap<String, response::Consumer>,
     ) -> Result<Self>
     where
         Self: Sized,
@@ -164,18 +156,13 @@ impl Reports for Vec<AbsentReport> {
 }
 
 impl Reason {
-    pub fn new(types: Vec<response::ReportTypesItemFieldOption>, id: &str) -> Result<Self> {
-        let r#type = types
-            .iter()
-            .find(|r#type| r#type.id == id)
-            .context(format!("Type id \"{}\" can not be found in types", id))?;
-
-        let variant = match r#type.id.as_str() {
+    pub fn new(id: &str) -> Result<Self> {
+        let variant = match id {
             REASON_TRAINING_ID => Self::Training,
             REASON_PROFESSIONALLY_ID => Self::Professionally,
             REASON_ILLNESS_ID => Self::Illness,
             REASON_VACATION_ID => Self::Vacation,
-            _ => bail!("Unknow type variant \"{}\"", r#type.id),
+            _ => bail!("Unknow type variant \"{}\"", id),
         };
 
         Ok(variant)
@@ -191,24 +178,4 @@ impl Display for Reason {
             Reason::Vacation => f.write_str(REASON_VACATION_TEXT),
         }
     }
-}
-
-fn parse_date(value: &Value) -> Result<NaiveDate> {
-    let timestamp: i64 = if value.is_number() {
-        value.as_i64().unwrap()
-    } else {
-        // Since divera has strange coding for their date types
-        // (Sometimes 12342134 and sometimes 12342134.0) this hack is needed.
-        // First get the string, parse it into a float and then truncate it...
-        value
-            .as_str()
-            .ok_or_else(|| anyhow!("Failed to get string from value"))?
-            .parse::<f64>()?
-            .trunc() as i64
-    };
-    let datetime = DateTime::from_timestamp(timestamp as i64, 0)
-        .ok_or_else(|| anyhow!("Failed to parse \"{}\" to datetime", timestamp))?
-        .naive_utc()
-        .date();
-    Ok(datetime)
 }

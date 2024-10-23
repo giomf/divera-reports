@@ -52,9 +52,11 @@ pub enum Report {
     Roster(PrintWriteUpload),
     /// Station reports
     Station(PrintWriteUpload),
+    /// Fire Operation reports
+    FireOperation(PrintWriteUpload),
 }
 
-#[derive(Debug, Args)]
+#[derive(Default, Debug, Args)]
 #[group(required = true, multiple = false)]
 pub struct PrintWriteUpload {
     /// Prints the reports in a table format
