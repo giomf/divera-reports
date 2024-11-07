@@ -7,23 +7,44 @@
     naersk.url = "github:nix-community/naersk";
   };
 
-  outputs = { self, nixpkgs, flake-utils, naersk }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      naersk,
+    }:
     {
       nixosModules.default = import ./module.nix self;
-    } // flake-utils.lib.eachDefaultSystem (system:
+    }
+    // flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
         naersk' = pkgs.callPackage naersk { };
-      in rec{
+      in
+      rec {
         defaultPackage = naersk'.buildPackage {
           src = ./.;
-          nativeBuildInputs = with pkgs; [ pkg-config openssl ];
+          nativeBuildInputs = with pkgs; [
+            pkg-config
+            openssl
+          ];
           buildInputs = with pkgs; [ openssl ];
         };
         overlays.default = final: prev: { divera-reports = defaultPackage; };
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [ cargo rustc rust-analyzer rustfmt openssl pkg-config ];
+          buildInputs = with pkgs; [
+            cargo
+            clippy
+            rustc
+            rust-analyzer
+            rustfmt
+            openssl
+            pkg-config
+          ];
           env = { };
         };
-      });
+      }
+    );
 }
